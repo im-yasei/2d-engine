@@ -1,3 +1,7 @@
+include_directories(/opt/homebrew/opt/jsoncpp/include)
+link_directories(/opt/homebrew/opt/jsoncpp/lib)
+
+
 add_executable(2d-engine
     src/main.cpp
 )

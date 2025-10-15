@@ -2,10 +2,18 @@
 #include <SFML/System/Vector2.hpp>
 #include <arpa/inet.h>
 #include <atomic>
-#include <bits/stdc++.h>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <algorithm>
+#include <map>
+#include <set>
+#include <queue>
+#include <stack>
 #include <fstream>
 #include <iostream>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <math.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -15,6 +23,10 @@
 #include <sys/types.h>
 #include <thread>
 #include <unistd.h>
+#ifndef MSG_CONFIRM
+#define MSG_CONFIRM 0
+#endif
+
 #define PORT 8080
 #define MAXLINE 1024
 
