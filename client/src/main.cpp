@@ -5,7 +5,7 @@
 #include <bits/stdc++.h>
 #include <fstream>
 #include <iostream>
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <math.h>
 #include <netinet/in.h>
 #include <stdlib.h>

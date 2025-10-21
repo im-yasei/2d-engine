@@ -9,4 +9,5 @@ target_link_libraries(engine PUBLIC
     sfml-graphics
     sfml-window
     sfml-system
+    ${JSONCPP_LIBRARIES}
 )

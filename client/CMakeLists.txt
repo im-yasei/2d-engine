@@ -6,9 +6,9 @@ target_include_directories(2d-engine PRIVATE
     ${CMAKE_SOURCE_DIR}/engine/include
 )
 
-target_link_libraries(2d-engine 
+target_link_libraries(2d-engine
   PRIVATE
-   engine
-   jsoncpp
- )
+  ${JSONCPP_LIBRARIES}
+  engine
+)
 
