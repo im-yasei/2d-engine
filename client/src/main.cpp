@@ -111,7 +111,7 @@ int main() {
 
   // window creation
   sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "cyan planet");
-  window.setFramerateLimit(60);
+  window.setFramerateLimit(30);
 
   planet.setRadius(planet_info["Planet"]["radius"].asFloat());
   planet.init();
