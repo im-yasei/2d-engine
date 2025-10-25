@@ -2,7 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <arpa/inet.h>
 #include <atomic>
-#include <bits/stdc++.h>
+//include <bits/stdc++.h> <- зачем она вообще нужна?
 #include <fstream>
 #include <iostream>
 #include <json/json.h>
@@ -18,6 +18,14 @@
 #define PORT 8080
 #define MAXLINE 1024
 
+#ifdef __linux__
+    int flags = MSG_CONFIRM;
+#elif __APPLE__
+    int flags = 0;  // macOS не поддерживает MSG_CONFIRM
+#else
+    int flags = 0;
+#endif
+
 std::atomic<bool> clientRunning{true};
 
 void client_send(int sockfd, struct sockaddr_in *servaddr,
@@ -29,7 +37,7 @@ void client_send(int sockfd, struct sockaddr_in *servaddr,
     coords = "x:" + std::to_string(planetPosition->x) +
              " y:" + std::to_string(planetPosition->y) + "\n";
 
-    sendto(sockfd, coords.c_str(), coords.length(), MSG_CONFIRM,
+    sendto(sockfd, coords.c_str(), coords.length(), flags,
            (const struct sockaddr *)servaddr, sizeof(*servaddr));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
