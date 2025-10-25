@@ -3,6 +3,7 @@ add_library(engine STATIC
 )
 target_include_directories(engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/jsoncpp_amalgamated
 )
 
 target_link_libraries(engine PUBLIC
