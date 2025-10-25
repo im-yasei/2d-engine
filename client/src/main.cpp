@@ -1,15 +1,13 @@
 #include "engine.hpp"
+#include "json/json.h"
 #include <SFML/System/Vector2.hpp>
 #include <arpa/inet.h>
 #include <atomic>
-//include <bits/stdc++.h> <- зачем она вообще нужна?
+#include <cmath>
+#include <cstring>
 #include <fstream>
 #include <iostream>
-#include <json/json.h>
-#include <math.h>
 #include <netinet/in.h>
-#include <stdlib.h>
-#include <string.h>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -17,13 +15,14 @@
 #include <unistd.h>
 #define PORT 8080
 #define MAXLINE 1024
+#define JSON_USE_STRING_VIEW 0
 
 #ifdef __linux__
-    int flags = MSG_CONFIRM;
+int flags = MSG_CONFIRM;
 #elif __APPLE__
-    int flags = 0;  // macOS не поддерживает MSG_CONFIRM
+int flags = 0; // macOS doesn't support MSG_CONFIRM
 #else
-    int flags = 0;
+int flags = 0;
 #endif
 
 std::atomic<bool> clientRunning{true};
@@ -118,7 +117,12 @@ int main() {
   std::string planet_info_str = Json::writeString(writer, planet_info);
 
   // window creation
-  sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "cyan planet");
+  sf::RenderWindow window(
+      sf::VideoMode::getDesktopMode(), "cyan planet",
+      sf::Style::Fullscreen); // sf::RenderWindow
+                              // window(sf::VideoMode::getDesktopMode(),
+                              // "cyan planet"); - for window mode
+
   window.setFramerateLimit(60);
 
   planet.setRadius(planet_info["Planet"]["radius"].asFloat());
