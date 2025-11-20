@@ -7,12 +7,16 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <netinet/in.h>
+#include <sstream>
 #include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <thread>
 #include <unistd.h>
+#include <vector>
+
 #define PORT 8080
 #define MAXLINE 1024
 #define JSON_USE_STRING_VIEW 0
@@ -28,16 +32,35 @@ int flags = 0;
 std::atomic<bool> clientRunning{true};
 
 void client_send(int sockfd, struct sockaddr_in *servaddr,
-                 sf::Vector2f *planetPosition) {
-
-  std::string coords;
+                 std::vector<Planet> *planets, std::mutex *planets_mutex) {
 
   while (clientRunning) {
-    coords = "x:" + std::to_string(planetPosition->x) +
-             " y:" + std::to_string(planetPosition->y) + "\n";
+    std::stringstream coords_stream;
+    {
+      std::lock_guard<std::mutex> lock(*planets_mutex);
+      for (int i = 0; i < planets->size(); i++) {
+        coords_stream << "x" << std::to_string(i) << ":"
+                      << std::to_string(planets->at(i).getPosition().x) << " y"
+                      << std::to_string(i) << ":"
+                      << std::to_string(planets->at(i).getPosition().y) << "\n";
+      }
+    }
 
-    sendto(sockfd, coords.c_str(), coords.length(), flags,
-           (const struct sockaddr *)servaddr, sizeof(*servaddr));
+    std::string coords = coords_stream.str();
+
+    if (coords.length() > 65535) {
+      std::cerr << "Warning: packet too large (" << coords.length() << " bytes)"
+                << std::endl;
+      coords = coords.substr(0, 65535);
+    }
+
+    int bytes_sent =
+        sendto(sockfd, coords.c_str(), coords.length(), flags,
+               (const struct sockaddr *)servaddr, sizeof(*servaddr));
+
+    if (bytes_sent < 0) {
+      perror("sendto failed");
+    }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
   }
@@ -66,7 +89,89 @@ void client_receive(int sockfd, char *buffer, struct sockaddr_in *servaddr) {
   }
 }
 
+void applyGravity(std::vector<Planet> &planets, float G, float timeStep) {
+  for (int i = 0; i < planets.size(); i++) {
+    sf::Vector2f totalForce(0, 0);
+
+    for (int j = 0; j < planets.size(); j++) {
+      if (i == j)
+        continue;
+
+      sf::Vector2f direction =
+          planets[j].getPosition() - planets[i].getPosition();
+
+      float distance =
+          std::sqrt(direction.x * direction.x + direction.y * direction.y);
+
+      if (distance < 1.0f)
+        continue;
+
+      direction /= distance;
+
+      float forceMagnitude = G * planets[i].getMass() * planets[j].getMass() /
+                             (distance * distance);
+
+      totalForce += direction * forceMagnitude;
+    }
+
+    sf::Vector2f newAcceleration = totalForce / planets[i].getMass();
+    planets[i].setAcceleration(newAcceleration);
+
+    sf::Vector2f newVelocity =
+        planets[i].getVelocity() + newAcceleration * timeStep;
+    planets[i].setVelocity(newVelocity);
+
+    sf::Vector2f newPosition =
+        planets[i].getPosition() + newVelocity * timeStep;
+    planets[i].setPosition(newPosition);
+  }
+}
+
+void applyCollision(std::vector<Planet> &planets) {
+  for (int i = 0; i < planets.size(); i++) {
+    for (int j = i + 1; j < planets.size(); j++) {
+
+      if (planets[i].isColliding(planets[j])) {
+
+        sf::Vector2f collisionVector =
+            planets[j].getPosition() - planets[i].getPosition();
+        float distance = std::sqrt(collisionVector.x * collisionVector.x +
+                                   collisionVector.y * collisionVector.y);
+
+        if (distance > 0) {
+          collisionVector /= distance;
+
+          float overlap =
+              (planets[i].getRadius() + planets[j].getRadius()) - distance;
+          planets[i].setPosition(planets[i].getPosition() -
+                                 collisionVector * overlap * 0.5f);
+          planets[j].setPosition(planets[j].getPosition() +
+                                 collisionVector * overlap * 0.5f);
+
+          sf::Vector2f v1 = planets[i].getVelocity();
+          sf::Vector2f v2 = planets[j].getVelocity();
+          float m1 = planets[i].getMass();
+          float m2 = planets[j].getMass();
+
+          float v1n = v1.x * collisionVector.x + v1.y * collisionVector.y;
+          float v2n = v2.x * collisionVector.x + v2.y * collisionVector.y;
+
+          float restitution = 0.9f;
+          float u1n =
+              ((m1 - m2) * v1n + 2 * m2 * v2n) / (m1 + m2) * restitution;
+          float u2n =
+              ((m2 - m1) * v2n + 2 * m1 * v1n) / (m1 + m2) * restitution;
+
+          planets[i].setVelocity(v1 + collisionVector * (u1n - v1n));
+          planets[j].setVelocity(v2 + collisionVector * (u2n - v2n));
+        }
+      }
+    }
+  }
+}
+
 int main() {
+  std::mutex planets_mutex;
   int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
   if (sockfd < 0) {
     perror("socket creation failed");
@@ -93,28 +198,17 @@ int main() {
   setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
   // engine part
-  Planet planet;
-  sf::Vector2f planetPosition;
-  sf::Vector2f rotationCenter;
-  int moveEveryNFrames = 1, frameCounter = 0;
-  float t = 0; // parameter
-
-  std::thread client_receive_thread(client_receive, sockfd, buffer, &servaddr);
-  std::thread client_send_thread(client_send, sockfd, &servaddr,
-                                 &planetPosition);
+  std::vector<Planet> planets;
 
   // plantet.json parsiong
   std::ifstream planet_file("assets/planet.json", std::ifstream::binary);
   if (!planet_file) {
     std::cerr << "can't open planet.json";
+    close(sockfd);
     return 1;
   }
-  Json::Value planet_info;
-  planet_file >> planet_info;
-
-  // planet.json into a string
-  Json::StreamWriterBuilder writer;
-  std::string planet_info_str = Json::writeString(writer, planet_info);
+  Json::Value planets_info;
+  planet_file >> planets_info;
 
   // window creation
   sf::RenderWindow window(
@@ -125,10 +219,38 @@ int main() {
 
   window.setFramerateLimit(60);
 
-  planet.setRadius(planet_info["Planet"]["radius"].asFloat());
-  planet.init();
-  rotationCenter.x = planet_info["Planet"]["x"].asFloat();
-  rotationCenter.y = planet_info["Planet"]["y"].asFloat();
+  const Json::Value &planets_array = planets_info["Planets"];
+
+  // Planet init
+  for (const auto &planet_data : planets_array) {
+    sf::Vector2f planetPosition, planetVelocity;
+
+    Planet p(planet_data["radius"].asFloat(), planet_data["mass"].asFloat());
+
+    planetPosition.x = planet_data["x"].asFloat();
+    planetPosition.y = planet_data["y"].asFloat();
+
+    planetVelocity.x = planet_data["velocity"][0].asFloat();
+    planetVelocity.y = planet_data["velocity"][1].asFloat();
+
+    if (planet_data.isMember("color")) {
+      p.setColor(planet_data["color"][0].asInt(),
+                 planet_data["color"][1].asInt(),
+                 planet_data["color"][2].asInt());
+    }
+
+    p.setPosition(planetPosition);
+    p.setVelocity(planetVelocity);
+
+    planets.push_back(p);
+  }
+
+  std::thread client_receive_thread(client_receive, sockfd, buffer, &servaddr);
+  std::thread client_send_thread(client_send, sockfd, &servaddr, &planets,
+                                 &planets_mutex);
+
+  const float G = 100.0f;
+  const float timeStep = 0.016f;
 
   while (window.isOpen()) {
     sf::Event event;
@@ -136,17 +258,22 @@ int main() {
       if (event.type == sf::Event::Closed)
         window.close();
     }
-    frameCounter++;
-    if (frameCounter >= moveEveryNFrames) {
-      planetPosition.x = rotationCenter.x + 100 * cos(t);
-      planetPosition.y = rotationCenter.y + 100 * sin(t);
-      frameCounter = 0;
+
+    {
+      std::lock_guard<std::mutex> lock(planets_mutex);
+      applyGravity(planets, G, timeStep);
+      applyCollision(planets);
     }
-    t += 0.05; // velocity = 0.05
-    planet.setPosition(planetPosition);
 
     window.clear();
-    planet.draw(window);
+
+    {
+      std::lock_guard<std::mutex> lock(planets_mutex);
+      for (int i = 0; i < planets.size(); i++) {
+        planets[i].draw(window);
+      }
+    }
+
     window.display();
   }
 
