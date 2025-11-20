@@ -201,7 +201,7 @@ int main() {
   std::vector<Planet> planets;
 
   // plantet.json parsiong
-  std::ifstream planet_file("assets/planet.json", std::ifstream::binary);
+  std::ifstream planet_file("assets/planets.json", std::ifstream::binary);
   if (!planet_file) {
     std::cerr << "can't open planet.json";
     close(sockfd);
