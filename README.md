@@ -111,7 +111,7 @@ Collision is simulated using:
 	$\huge U_{2n} = \frac{(m_2\  -\  em_1)\cdot V_{2n}\  +\  (1\  +\  e)\cdot m_1V_{1n}}{m_1\  +\  m_2},$
 	where $\large e$ is restitution coefficient
 - Then we update the velocity vectors:
-	Set $\large \overrightarrow V_1$ velocity to $\large \overrightarrow{V_1} + \overrightarrow{n} \cdot (U_{1n} - V_{1n})$ 
+	Set $\large \overrightarrow V_1$ velocity to $\large \overrightarrow{V_1} + \overrightarrow{n} \cdot (U_{1n} - V_{1n})$; 
 	Set $\large \overrightarrow V_2$ velocity to $\large \overrightarrow{V_2} + \overrightarrow{n} \cdot (U_{2n} - V_{2n})$
 
 ```cpp title:main.cpp
@@ -149,9 +149,9 @@ void applyCollision(std::vector<Planet> &planets) {
 
           float restitution = 0.9f;
           float u1n =
-              ((m1 - restitution * m2) * v1n + (1 + restitution) * m2 *                  v2n) / (m1 + m2);
+              ((m1 - restitution * m2) * v1n + (1 + restitution) * m2 * v2n) / (m1 + m2);
           float u2n =
-              ((m2 - restitution * m1) * v2n + (1 + restitution) * m1 *                  v1n) / (m1 + m2);
+              ((m2 - restitution * m1) * v2n + (1 + restitution) * m1 * v1n) / (m1 + m2);
 
           planets[i].setVelocity(v1 + collisionVector * (u1n - v1n));
           planets[j].setVelocity(v2 + collisionVector * (u2n - v2n));
