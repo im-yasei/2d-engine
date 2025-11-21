@@ -141,26 +141,31 @@ void applyCollision(std::vector<Planet> &planets) {
         if (distance > 0) {
           collisionVector /= distance;
 
+          float m1 = planets[i].getMass(), m2 = planets[j].getMass();
+          float totalMass = m1 + m2;
+          float ratio1 = m2 / totalMass;
+          float ratio2 = m1 / totalMass;
+
           float overlap =
               (planets[i].getRadius() + planets[j].getRadius()) - distance;
           planets[i].setPosition(planets[i].getPosition() -
-                                 collisionVector * overlap * 0.5f);
+                                 collisionVector * overlap * ratio1);
           planets[j].setPosition(planets[j].getPosition() +
-                                 collisionVector * overlap * 0.5f);
+                                 collisionVector * overlap * ratio2);
 
           sf::Vector2f v1 = planets[i].getVelocity();
           sf::Vector2f v2 = planets[j].getVelocity();
-          float m1 = planets[i].getMass();
-          float m2 = planets[j].getMass();
 
           float v1n = v1.x * collisionVector.x + v1.y * collisionVector.y;
           float v2n = v2.x * collisionVector.x + v2.y * collisionVector.y;
 
           float restitution = 0.9f;
           float u1n =
-              ((m1 - m2) * v1n + 2 * m2 * v2n) / (m1 + m2) * restitution;
+              ((m1 - restitution * m2) * v1n + (1 + restitution) * m2 * v2n) /
+              (m1 + m2);
           float u2n =
-              ((m2 - m1) * v2n + 2 * m1 * v1n) / (m1 + m2) * restitution;
+              ((m2 - restitution * m1) * v2n + (1 + restitution) * m1 * v1n) /
+              (m1 + m2);
 
           planets[i].setVelocity(v1 + collisionVector * (u1n - v1n));
           planets[j].setVelocity(v2 + collisionVector * (u2n - v2n));
@@ -200,7 +205,7 @@ int main() {
   // engine part
   std::vector<Planet> planets;
 
-  // plantet.json parsiong
+  // plantet.json parsing
   std::ifstream planet_file("assets/planets.json", std::ifstream::binary);
   if (!planet_file) {
     std::cerr << "can't open planet.json";
@@ -277,7 +282,7 @@ int main() {
     window.display();
   }
 
-  // clinet thread termination
+  // client thread termination
   clientRunning = false;
 
   if (client_receive_thread.joinable()) {
