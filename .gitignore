@@ -2,7 +2,6 @@ build-debug/
 build-release/
 .cache/
 
-interface/
 tests/
 
 compile_commands.json
