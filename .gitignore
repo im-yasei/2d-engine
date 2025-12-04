@@ -1,18 +1,17 @@
-# ========== Build directories ==========
 build-debug/
 build-release/
 .cache/
 
-# ========== Root build files ==========
+interface/
+tests/
+
 compile_commands.json
 
-# ========== IDE and editor files ==========
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# ========== System files ==========
 .DS_Store
 Thumbs.db

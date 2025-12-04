@@ -1,3 +1,4 @@
+#include "SFML/Graphics/CircleShape.hpp"
 #include "engine.hpp"
 #include "json/json.h"
 #include <SFML/System/Vector2.hpp>
@@ -128,6 +129,7 @@ void applyGravity(std::vector<Planet> &planets, float G, float timeStep) {
 }
 
 void applyCollision(std::vector<Planet> &planets) {
+  const float FRICTION_COEFFICIENT = 0.08f;
   for (int i = 0; i < planets.size(); i++) {
     for (int j = i + 1; j < planets.size(); j++) {
 
@@ -159,7 +161,7 @@ void applyCollision(std::vector<Planet> &planets) {
           float v1n = v1.x * collisionVector.x + v1.y * collisionVector.y;
           float v2n = v2.x * collisionVector.x + v2.y * collisionVector.y;
 
-          float restitution = 0.9f;
+          float restitution = 0.0f;
           float u1n =
               ((m1 - restitution * m2) * v1n + (1 + restitution) * m2 * v2n) /
               (m1 + m2);
@@ -169,6 +171,27 @@ void applyCollision(std::vector<Planet> &planets) {
 
           planets[i].setVelocity(v1 + collisionVector * (u1n - v1n));
           planets[j].setVelocity(v2 + collisionVector * (u2n - v2n));
+
+          // friction
+          sf::Vector2f tangent(-collisionVector.y, collisionVector.x);
+
+          float v1t = v1.x * tangent.x + v1.y * tangent.y;
+          float v2t = v2.x * tangent.x + v2.y * tangent.y;
+
+          float relativeTangentialSpeed = std::abs(v1t - v2t);
+
+          if (relativeTangentialSpeed > 0.1f) {
+            v1t *= (1.0f - FRICTION_COEFFICIENT);
+            v2t *= (1.0f - FRICTION_COEFFICIENT);
+
+            float new_v1n = planets[i].getVelocity().x * collisionVector.x +
+                            planets[i].getVelocity().y * collisionVector.y;
+            float new_v2n = planets[j].getVelocity().x * collisionVector.x +
+                            planets[j].getVelocity().y * collisionVector.y;
+
+            planets[i].setVelocity(collisionVector * new_v1n + tangent * v1t);
+            planets[j].setVelocity(collisionVector * new_v2n + tangent * v2t);
+          }
         }
       }
     }
@@ -216,11 +239,11 @@ int main() {
   planet_file >> planets_info;
 
   // window creation
-  sf::RenderWindow window(
-      sf::VideoMode::getDesktopMode(), "cyan planet",
-      sf::Style::Fullscreen); // sf::RenderWindow
-                              // window(sf::VideoMode::getDesktopMode(),
-                              // "cyan planet"); - for window mode
+  sf::RenderWindow window(sf::VideoMode::getDesktopMode(), "cyan planet",
+                          sf::Style::Fullscreen);
+  // sf::RenderWindow
+  // window(sf::VideoMode::getDesktopMode(),
+  // "cyan planet"); - for window mode
 
   window.setFramerateLimit(60);
 
@@ -254,8 +277,15 @@ int main() {
   std::thread client_send_thread(client_send, sockfd, &servaddr, &planets,
                                  &planets_mutex);
 
+  sf::View camera = window.getDefaultView();
+  float cameraSpeed = 5.0f;
+  int scrollBorder = 10;
+
   const float G = 100.0f;
   const float timeStep = 0.016f;
+
+  // trajectories vector
+  std::vector<std::vector<sf::Vertex>> trajectories(planets.size());
 
   while (window.isOpen()) {
     sf::Event event;
@@ -264,17 +294,48 @@ int main() {
         window.close();
     }
 
+    sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+    sf::Vector2u windowSize = window.getSize();
+
+    // move camera
+    if (mousePos.x < scrollBorder) {
+      camera.move(-cameraSpeed, 0);
+    }
+    if (mousePos.x > windowSize.x - scrollBorder) {
+      camera.move(cameraSpeed, 0);
+    }
+    if (mousePos.y < scrollBorder) {
+      camera.move(0, -cameraSpeed);
+    }
+    if (mousePos.y > windowSize.y - scrollBorder) {
+      camera.move(0, cameraSpeed);
+    }
+
     {
       std::lock_guard<std::mutex> lock(planets_mutex);
       applyGravity(planets, G, timeStep);
       applyCollision(planets);
     }
 
+    window.setView(camera);
+
     window.clear();
 
     {
       std::lock_guard<std::mutex> lock(planets_mutex);
       for (int i = 0; i < planets.size(); i++) {
+
+        sf::Color trailColor = planets[i].getShape().getFillColor();
+        trailColor.a = 200;
+
+        trajectories[i].push_back(
+            sf::Vertex(planets[i].getPosition(), trailColor));
+
+        if (trajectories[i].size() > 1) {
+          window.draw(&trajectories[i][0], trajectories[i].size(),
+                      sf::LineStrip);
+        }
+
         planets[i].draw(window);
       }
     }
