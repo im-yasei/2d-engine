@@ -115,11 +115,11 @@ if(SFML_OS_ANDROID)
     # pass shared STL configuration (if any)
     if (CMAKE_ANDROID_STL_TYPE MATCHES "_shared")
         add_definitions("-DSTL_LIBRARY=${CMAKE_ANDROID_STL_TYPE}")
-    #    if(NOT CMAKE_ANDROID_STL_TYPE MATCHES "c\\+\\+_shared")
-    #        message("Android: Using ${CMAKE_ANDROID_STL_TYPE} as STL. Set CMAKE_ANDROID_STL_TYPE to c++_shared, if there are any issues.")
-    #    endif()
+        #    if(NOT CMAKE_ANDROID_STL_TYPE MATCHES "c\\+\\+_shared")
+        #        message("Android: Using ${CMAKE_ANDROID_STL_TYPE} as STL. Set CMAKE_ANDROID_STL_TYPE to c++_shared, if there are any issues.")
+        #    endif()
     else()
-    #    message(WARNING "Android: You're using a static STL (${CMAKE_ANDROID_STL_TYPE}). Set CMAKE_ANDROID_STL_TYPE to c++_shared, if there are any issues.")
+        #    message(WARNING "Android: You're using a static STL (${CMAKE_ANDROID_STL_TYPE}). Set CMAKE_ANDROID_STL_TYPE to c++_shared, if there are any issues.")
     endif()
 
     # let the user switch ABIs
@@ -381,7 +381,7 @@ else()
                            $<TARGET_FILE_DIR:SFML>/Headers)
     endif()
 
-     # add graphics module headers if enabled
+    # add graphics module headers if enabled
     if(SFML_BUILD_GRAPHICS)
         add_custom_command(TARGET SFML POST_BUILD COMMAND cp -r
                            ${PROJECT_SOURCE_DIR}/include/SFML/Graphics.hpp
@@ -389,7 +389,7 @@ else()
                            $<TARGET_FILE_DIR:SFML>/Headers)
     endif()
 
-     # add audio module headers if enabled
+    # add audio module headers if enabled
     if(SFML_BUILD_AUDIO)
         add_custom_command(TARGET SFML POST_BUILD COMMAND cp -r
                            ${PROJECT_SOURCE_DIR}/include/SFML/Audio.hpp
