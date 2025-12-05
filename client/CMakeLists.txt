@@ -1,11 +1,13 @@
 add_executable(2d-engine
     src/main.cpp
+    src/physics.cpp
   ../jsoncpp_amalgamated/jsoncpp.cpp
 )
 
 target_include_directories(2d-engine PRIVATE
     ${CMAKE_SOURCE_DIR}/engine/include
-    ${CMAKE_SOURCE_DIR}/interface/include
+    ${CMAKE_SOURCE_DIR}/client/include
+    # ${CMAKE_SOURCE_DIR}/interface/include
     ${CMAKE_SOURCE_DIR}/jsoncpp_amalgamated
 )
 

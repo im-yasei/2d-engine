@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.10)
 project(2d-engine)
 
 # find_package(PkgConfig REQUIRED)
@@ -8,4 +8,5 @@ project(2d-engine)
 add_subdirectory(SFML-2.6.2)
 add_subdirectory(engine)
 add_subdirectory(client)
-add_subdirectory(interface)
+add_subdirectory(tests)
+# add_subdirectory(interface)
