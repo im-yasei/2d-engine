@@ -1,12 +1,14 @@
-#include "SFML/Graphics/CircleShape.hpp"
 #include "engine.hpp"
 #include "json/json.h"
 #include <SFML/System/Vector2.hpp>
+#include <X11/X.h>
 #include <arpa/inet.h>
 #include <atomic>
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <imgui-SFML.h>
+#include <imgui.h>
 #include <iostream>
 #include <mutex>
 #include <netinet/in.h>
@@ -281,18 +283,98 @@ int main() {
   float cameraSpeed = 5.0f;
   int scrollBorder = 10;
 
-  const float G = 100.0f;
-  const float timeStep = 0.016f;
+  float G = 100.0f;
+  float timeStep = 0.016f;
 
   // trajectories vector
   std::vector<std::vector<sf::Vertex>> trajectories(planets.size());
 
+  if (!ImGui::SFML::Init(window)) {
+    std::cerr << "Failed to initialize ImGui-SFML" << std::endl;
+    return 1;
+  }
+
   while (window.isOpen()) {
     sf::Event event;
     while (window.pollEvent(event)) {
+      ImGui::SFML::ProcessEvent(window, event);
       if (event.type == sf::Event::Closed)
         window.close();
     }
+
+    static sf::Clock deltaClock;
+    ImGui::SFML::Update(window, deltaClock.restart());
+
+    ImGui::Begin("Simulation menu", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+
+    if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen)) {
+      ImGui::SliderFloat("Gravitation", &G, 0.0f, 1000.0f, "%.1f");
+      ImGui::SliderFloat("Time step", &timeStep, 0.001f, 0.1f, "%.3f");
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Camera:");
+    ImGui::SliderFloat("Speed", &cameraSpeed, 1.0f, 50.0f);
+    if (ImGui::Button("Reser view")) {
+      camera = window.getDefaultView();
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Planets: %d", (int)planets.size());
+
+    static float newRadius = 10.0f;
+    static float newMass = 100.0f;
+
+    // Planet creation
+    ImGui::Separator();
+    ImGui::Text("New planet");
+    ImGui::PushItemWidth(100.0f);
+
+    ImGui::InputFloat("Radius", &newRadius, 0.5f, 1.0f, "%.1f");
+    ImGui::SameLine();
+    ImGui::InputFloat("Mass", &newMass, 10.0f, 50.0f, "%.0f");
+
+    static float posX = 400.0f, posY = 300.0f;
+    ImGui::InputFloat("Position X", &posX, 10.0f, 50.0f, "%.0f");
+    ImGui::SameLine();
+    ImGui::InputFloat("Position Y", &posY, 10.0f, 50.0f, "%.0f");
+
+    static float color[3] = {1.0f, 1.0f, 1.0f};
+    ImGui::ColorEdit3("Color", color,
+                      ImGuiColorEditFlags_NoInputs |
+                          ImGuiColorEditFlags_NoLabel);
+    ImGui::SameLine();
+    ImGui::Text("Color");
+
+    static float velX = 0.0f, velY = 0.0f;
+    ImGui::InputFloat("Velocity X", &velX, 0.1f, 1.0f, "%.1f");
+    ImGui::SameLine();
+    ImGui::InputFloat("Velocity Y", &velY, 0.1f, 1.0f, "%.1f");
+
+    ImGui::PopItemWidth();
+
+    if (ImGui::Button("Create a planet")) {
+      Planet p(newRadius, newMass);
+      p.setPosition(sf::Vector2f(posX, posY));
+      p.setVelocity(sf::Vector2f(velX, velY));
+
+      p.setColor(static_cast<int>(color[0] * 255),
+                 static_cast<int>(color[1] * 255),
+                 static_cast<int>(color[2] * 255));
+
+      std::lock_guard<std::mutex> lock(planets_mutex);
+      planets.push_back(p);
+      trajectories.push_back(std::vector<sf::Vertex>());
+    }
+
+    ImGui::Separator();
+    ImGui::Text("Trajectories");
+    if (ImGui::Button("Clear trajectories")) {
+      for (auto &trail : trajectories) {
+        trail.clear();
+      }
+    }
+    ImGui::End();
 
     sf::Vector2i mousePos = sf::Mouse::getPosition(window);
     sf::Vector2u windowSize = window.getSize();
@@ -320,7 +402,6 @@ int main() {
     window.setView(camera);
 
     window.clear();
-
     {
       std::lock_guard<std::mutex> lock(planets_mutex);
       for (int i = 0; i < planets.size(); i++) {
@@ -340,8 +421,10 @@ int main() {
       }
     }
 
+    ImGui::SFML::Render(window);
     window.display();
   }
+  ImGui::SFML::Shutdown();
 
   // client thread termination
   clientRunning = false;
