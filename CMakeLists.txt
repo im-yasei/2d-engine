@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 4.1)
 project(2d-engine)
 
-# find_package(PkgConfig REQUIRED)
-# pkg_check_modules(JSONCPP REQUIRED jsoncpp)
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui-sfml/imconfig-SFML.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui/imconfig.h
+    COPYONLY
+)
 
-# find_package(jsoncpp REQUIRED)
-add_subdirectory(SFML-2.6.2)
+set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui CACHE PATH "Path to ImGui" FORCE)
+set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "don't search for SFML" FORCE)
+
+add_subdirectory(thirdparty/SFML-2.6.2)
 add_subdirectory(engine)
 add_subdirectory(client)
-add_subdirectory(interface)
+add_subdirectory(thirdparty/imgui-sfml)
