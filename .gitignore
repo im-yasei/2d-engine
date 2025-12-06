@@ -2,8 +2,7 @@ build-debug/
 build-release/
 .cache/
 
-interface/
-tests/
+imgui.ini
 
 compile_commands.json
 

@@ -13,7 +13,7 @@ private:
 public:
   Planet(float radius = 10.0f, float mass = 0.0f);
 
-  void setColor(int red, int glue, int blue);
+  void setColor(int red, int green, int blue);
 
   void setRadius(float newRadius);
   float getRadius() const;
