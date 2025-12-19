@@ -12,5 +12,5 @@ set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL "don't search for SFML" FORCE)
 
 add_subdirectory(thirdparty/SFML-2.6.2)
 add_subdirectory(engine)
-add_subdirectory(client)
+add_subdirectory(client-server)
 add_subdirectory(thirdparty/imgui-sfml)
