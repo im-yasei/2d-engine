@@ -49,7 +49,7 @@ ConnectionConfig showLauncher() {
   sf::Clock clock;
   ConnectionConfig config = {false, false, "127.0.0.1", 8080};
 
-  static char ipBuffer[64] = "127.0.0.1";
+  static char ipBuffer[64] = "0.0.0.0";
   static char portBuffer[16] = "8080";
 
   static int selectedMode = 0;
@@ -86,17 +86,6 @@ ConnectionConfig showLauncher() {
       // host mode
       ImGui::TextColored(ImVec4(0.2f, 1.0f, 0.2f, 1.0f), "Host Configuration");
 
-      ImGui::Text("Send to IP:");
-      ImGui::InputText("##HostIP", ipBuffer, sizeof(ipBuffer));
-      ImGui::SameLine();
-      if (ImGui::SmallButton("255")) {
-        strcpy(ipBuffer, "255.255.255.255");
-      }
-      ImGui::SameLine();
-      if (ImGui::SmallButton("127")) {
-        strcpy(ipBuffer, "127.0.0.1");
-      }
-
       ImGui::Text("Port to send on:");
       ImGui::InputText("##HostPort", portBuffer, sizeof(portBuffer));
 
@@ -110,7 +99,8 @@ ConnectionConfig showLauncher() {
         if (ss >> port && port > 0 && port < 65536) {
           config.start = true;
           config.isServer = true;
-          config.ip = ipBuffer;
+          // config.ip = ipBuffer;
+          config.ip = "255.255.255.255";
           config.port = port;
           launcher.close();
         } else {
@@ -124,10 +114,6 @@ ConnectionConfig showLauncher() {
 
       ImGui::Text("Listen on IP:");
       ImGui::InputText("##ClientIP", ipBuffer, sizeof(ipBuffer));
-      ImGui::SameLine();
-      if (ImGui::SmallButton("0.0.0.0")) {
-        strcpy(ipBuffer, "0.0.0.0");
-      }
 
       ImGui::Text("Port to listen on:");
       ImGui::InputText("##ClientPort", portBuffer, sizeof(portBuffer));
