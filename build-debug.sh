@@ -22,4 +22,4 @@ echo "Building project..."
 cd build-debug && ninja
 
 echo "Debug build completed!"
-echo "Run: ./build-debug/client/2d-engine"
+echo "Run: ./build-debug/client-server/2d-engine"

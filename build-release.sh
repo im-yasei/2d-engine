@@ -22,4 +22,4 @@ echo "Building project..."
 cd build-release && ninja
 
 echo "Release build completed!"
-echo "Run: ./build-release/client/2d-engine"
+echo "Run: ./build-release/client-server/2d-engine"
