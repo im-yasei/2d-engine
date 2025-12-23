@@ -96,25 +96,26 @@ void applyCollision(std::vector<Planet> &planets) {
           planets[j].setVelocity(v2 + collisionVector * (u2n - v2n));
 
           // friction
-          sf::Vector2f tangent(-collisionVector.y, collisionVector.x);
-
-          float v1t = v1.x * tangent.x + v1.y * tangent.y;
-          float v2t = v2.x * tangent.x + v2.y * tangent.y;
-
-          float relativeTangentialSpeed = std::abs(v1t - v2t);
-
-          if (relativeTangentialSpeed > 0.1f) {
-            v1t *= (1.0f - FRICTION_COEFFICIENT);
-            v2t *= (1.0f - FRICTION_COEFFICIENT);
-
-            float new_v1n = planets[i].getVelocity().x * collisionVector.x +
-                            planets[i].getVelocity().y * collisionVector.y;
-            float new_v2n = planets[j].getVelocity().x * collisionVector.x +
-                            planets[j].getVelocity().y * collisionVector.y;
-
-            planets[i].setVelocity(collisionVector * new_v1n + tangent * v1t);
-            planets[j].setVelocity(collisionVector * new_v2n + tangent * v2t);
-          }
+          // sf::Vector2f tangent(-collisionVector.y, collisionVector.x);
+          //
+          // float v1t = v1.x * tangent.x + v1.y * tangent.y;
+          // float v2t = v2.x * tangent.x + v2.y * tangent.y;
+          //
+          // float relativeTangentialSpeed = std::abs(v1t - v2t);
+          //
+          // if (relativeTangentialSpeed > 0.1f) {
+          //   v1t *= (1.0f - FRICTION_COEFFICIENT);
+          //   v2t *= (1.0f - FRICTION_COEFFICIENT);
+          //
+          //   float new_v1n = planets[i].getVelocity().x * collisionVector.x +
+          //                   planets[i].getVelocity().y * collisionVector.y;
+          //   float new_v2n = planets[j].getVelocity().x * collisionVector.x +
+          //                   planets[j].getVelocity().y * collisionVector.y;
+          //
+          //   planets[i].setVelocity(collisionVector * new_v1n + tangent *
+          //   v1t); planets[j].setVelocity(collisionVector * new_v2n + tangent
+          //   * v2t);
+          // }
         }
       }
     }
