@@ -1,11 +1,18 @@
 # 2d engine for basic gravity simulation
-
+## Tech stack
+- C++
+- SFML
+- Dear ImGui
+- jsoncpp
+- CMake
+- Ninja
 ## Implemented
 - Gravity simulation between multiple planets
 - Collision handling
 - POSIX API for sockets and threading
-- UDP client for planetary positions synchronization
+- UDP client-server for planetary positions synchronization
 - Planetary system configuration via JSON files
+- Graphical user interface
 ## Required
 - CMake (4.1+ version)
 - Ninja
